@@ -2,14 +2,18 @@
 
 Now working as a module. Later I will upload a library via jitpack
 
-#TODO: 
-publish on jitpack
+# Installation
 
-`implementation 'com.github.mjm918:BluetoothKit:1.0.1'`
+`allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+	}`
 
-^ this one `implementation` might not work now
-
-
+`dependencies {
+	        implementation 'com.github.mjm918:BluetoothKit:1.0.1'
+	}`
 
 
 
