@@ -1,5 +1,4 @@
-package com.stressoverflow.julfikar.blkit;
-
+package com.esv2.blkit;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -11,28 +10,33 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
-import android.util.Log;
 
-import com.stressoverflow.julfikar.blkit.Listener.BluetoothListener;
-import com.stressoverflow.julfikar.blkit.Listener.DeviceListener;
-import com.stressoverflow.julfikar.blkit.Listener.DiscoveryListener;
-import com.stressoverflow.julfikar.blkit.Util.ThreadRunner;
+import com.esv2.blkit.Listener.BluetoothListener;
+import com.esv2.blkit.Listener.DeviceListener;
+import com.esv2.blkit.Listener.DiscoveryListener;
+import com.esv2.blkit.Util.ThreadRunner;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * @author Mohammad Julfikar Mahmud
+ * Library can be found with example code on my GitHub
+ * 
+ */
+
 public class BluetoothKit {
 
     private static final int        REQ_ENABLE_BT           = 786;
-    private static final String     REQ_UUID                = "06ba5b31-81c2-4c20-8072-d090f8c40b2b";
+    private static final String     REQ_UUID                = "00001101-0000-1000-8000-00805F9B34FB";
 
 
     private Activity                activity;
@@ -48,15 +52,17 @@ public class BluetoothKit {
     private BufferedReader          bufferedReader;
     private OutputStream            outputStream;
 
-    private BluetoothListener       bluetoothListener;
-    private DeviceListener          deviceListener;
-    private DiscoveryListener       discoveryListener;
+    private BluetoothListener bluetoothListener;
+    private DeviceListener deviceListener;
+    private DiscoveryListener discoveryListener;
 
     private boolean                 isConnected;
     private boolean                 isOnUi;
+    private boolean isScanningRegistered = false;
 
     private ArrayList
             <BluetoothDevice>       availableDevices;
+
 
     public BluetoothKit(Context context){
         InitBluetoothKit(context,UUID.fromString(REQ_UUID));
@@ -79,7 +85,7 @@ public class BluetoothKit {
     }
 
     public void onStart(){
-        if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
             bluetoothManager        = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
             if(bluetoothManager != null){
                 bluetoothAdapter    = bluetoothManager.getAdapter();
@@ -275,9 +281,12 @@ public class BluetoothKit {
 
         context.registerReceiver(scanReceiver, filter);
         bluetoothAdapter.startDiscovery();
+
+        isScanningRegistered = true;
     }
 
     public void stopScanning(){
+        isScanningRegistered = false;
         context.unregisterReceiver(scanReceiver);
         bluetoothAdapter.cancelDiscovery();
     }
@@ -324,12 +333,19 @@ public class BluetoothKit {
                 if(isInsecureConnection){
                     BluetoothKit.this.bluetoothSocket   = device.createInsecureRfcommSocketToServiceRecord(uuid);
                 }else{
-                    BluetoothKit.this.bluetoothSocket   = device.createRfcommSocketToServiceRecord(uuid);
+                    Method m = BluetoothKit.this.bluetoothDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class});
+                    BluetoothKit.this.bluetoothSocket = (BluetoothSocket) m.invoke(bluetoothDevice, 1);
                 }
             }catch (IOException ex){
                 if(deviceListener != null){
                     deviceListener.onError(ex.getMessage());
                 }
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
         }
 
@@ -540,5 +556,13 @@ public class BluetoothKit {
 
     public void removeDiscoveryListener(){
         this.discoveryListener      = null;
+    }
+
+    public BluetoothDevice getBluetoothDevice() {
+        return bluetoothDevice;
+    }
+
+    public boolean isScanningRegistered() {
+        return this.isScanningRegistered;
     }
 }
