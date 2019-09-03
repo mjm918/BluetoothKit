@@ -1,6 +1,6 @@
 # BluetoothKit
 
-
+I am using this module in 2 of my Apps. I find it reliable and easy.
 
 # Installation
 
